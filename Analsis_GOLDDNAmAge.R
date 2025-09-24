@@ -160,6 +160,9 @@ length(pl2)
 ############################
 library(biglasso)
 cpgs1=names(pl2)[2:length(pl2)]
+cpgs1=cpgs1[grep("^cg",cpgs1)]
+length(cpgs1)
+
 x1=age_download[rownames(age_download) %in% cpgs1,cl]
 dim(x1)
 
@@ -177,7 +180,7 @@ cvfit2 <- tryCatch(
 )
 
 summary(cvfit2)
-saveRDS(cvfit2,"Resi/Lasso.cvfit.resi.rds")
+#saveRDS(cvfit2,"Resi/Lasso.cvfit.resi.rds")
 
 cvfit2=readRDS("Resi/Lasso.cvfit.resi.rds")
 pdf("Resi/Lasso.meth3.pdf",height = 4,width = 6)
@@ -244,7 +247,7 @@ colnames(val.meth)
 
 nl1=apply(val.meth, 1, nas_stat)
 summary(nl1)
-val.meth=val.meth[which(nl1<97),]
+val.meth=val.meth[which(nl1<92),]
 dim(val.meth)
 com.sam=val.meth[,1][val.meth[,1] %in% val.sam$sample_id]
 length(com.sam)
@@ -258,6 +261,7 @@ val.meth=imputeMissings::impute(val.meth)
 
 cpgs.coef3=names(coef3)[2:length(coef3)]
 coef31=cpgs.coef3[cpgs.coef3 %in% colnames(val.meth)]
+length(coef31)
 
 x2=as.matrix(val.meth[,match(coef31,colnames(val.meth))])
 x2=apply(x2, 2, as.numeric)
@@ -378,6 +382,7 @@ library(survival)
 library(survminer)
 
 val.sam2=val.sam1[!is.na(val.sam2$vital_status),]
+dim(val.sam2)
 table(val.sam2$vital_status)
 val.sam2$vital_status=as.numeric(as.factor(val.sam2$vital_status)) -1
 table(val.sam2$vital_status)
@@ -457,5 +462,143 @@ dev.off()
 
 train.sam=pd[,c("id","age","sex","GDNAmAge","DNAmAge")]
 head(train.sam)
+
+val.sam3=val.sam2[,c("sample_id","age","sex","resi","dnamage")]
+val.sam3$resi=val.sam3$resi + val.sam3$age
+colnames(val.sam3)=c("id","age","sex","GDNAmAge","DNAmAge")
+head(val.sam3)
+
 write.csv(train.sam,"Resi/Info.train.samples.csv",row.names = F)
-write.csv(val.sam2,"Resi/Info.cancer.samples.csv",row.names = F)
+write.csv(val.sam3,"Resi/Info.cancer.samples.csv",row.names = F)
+
+###################
+library(methylclockData)
+library(methylclock)
+setwd("~/Desktop/BioageV2/Result4/")
+val.sam3=read.csv("Resi/Info.cancer.samples.csv")
+#load("Resi/cancer_methylation_v1.RData")
+cancer_download=readr::read_csv("Resi/methylation_matrix_large2.csv")
+head(cancer_download[,1:5])
+length(which(colnames(cancer_download) %in% val.sam3$id))
+
+#cancer_download[,1]=rownames(cancer_download)
+common.cpgs=readRDS("Resi/Common.clocks.cpgs.rds")
+head(common.cpgs)
+length(common.cpgs)
+
+#cancer_download=cancer_download[rownames(cancer_download) %in% common.cpgs,]
+cancer_download=cancer_download[,c(1,which(colnames(cancer_download) %in% val.sam3$id))]
+dim(cancer_download)
+
+cancer_download[,2:ncol(cancer_download)]=apply(cancer_download[,2:ncol(cancer_download)],2,as.numeric)
+cancer_download[is.na(cancer_download)]
+
+chunk_size <- 1000
+n_cols <- ncol(cancer_download)
+ii <- split(2:n_cols, ceiling(seq_along(1:n_cols) / chunk_size))
+ii
+DNAmClocks=list()
+k=1
+for(i in ii){
+  DNAmClocks[[k]]=DNAmAge(cancer_download[,c(1,i)])
+  print(k)
+  k=k+1
+}
+
+DNAmClocks1 <- do.call(rbind, DNAmClocks)
+head(DNAmClocks1)
+
+val.sam=read.table("Resi/sample_cancer.txt")
+val.sam=val.sam[match(val.sam3$id,val.sam$sample_id),]
+val.sam3$time=val.sam$overall_survival
+val.sam3$status=val.sam$vital_status
+val.sam3$status=as.numeric(as.factor(val.sam3$status)) -1
+val.sam3$sex=val.sam$sex
+val.sam3$race=val.sam$race
+val.sam3$race[grep("Indian",val.sam3$race)]="Asian"
+val.sam3$race[grep("Asian",val.sam3$race)]="Asian"
+val.sam3$race[grep("black",val.sam3$race)]="Black"
+val.sam3$race[grep("white",val.sam3$race)]="White"
+val.sam3=val.sam3[match(DNAmClocks1[[1]],val.sam3$id),]
+val.sam3=cbind(val.sam3,data.frame(DNAmClocks1))
+
+
+library(survival)
+library(survival)
+library(forestplot)
+
+# 存储结果的列表
+results <- list()
+nclocks=c("GDNAmAge","DNAmAge","Horvath","Hannum","Levine","BNN","EN")
+for(ck in nclocks){
+  fl <- paste("Surv(time, status) ~ age +", ck, "+ race + sex", sep = "")
+  cc1 <- coxph(as.formula(fl), data = val.sam3)
+  s <- summary(cc1)
+  ck_result <- s$coefficients[ck, ]
+  results[[ck]] <- data.frame(
+    Clock = ck,
+    HR = exp(ck_result["coef"]),
+    Lower_CI = exp(ck_result["coef"] - 1.96 * ck_result["se(coef)"]),
+    Upper_CI = exp(ck_result["coef"] + 1.96 * ck_result["se(coef)"]),
+    P_value = ck_result["Pr(>|z|)"]
+  )
+}
+
+forest_data <- do.call(rbind, results)
+rownames(forest_data) <- NULL
+results = forest_data 
+
+library(ggplot2)
+results$Clock[1]="GOLD DNAmAge"
+results$Clock=factor(results$Clock,levels = rev(results$Clock))
+
+pdf("Resi/HR.pdf",height = 3,width = 4)
+ggplot(results, aes(x = HR, y = Clock)) +
+  geom_point(size = 3, color = "navy") +
+  geom_errorbarh(aes(xmin = Lower_CI, xmax = Upper_CI), height = 0.2) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
+  scale_x_log10() +
+  labs(x = "Hazard Ratio (95% CI)",
+       y = "Epigenetic Clock") +
+  theme_classic2() + xlim(1,1.06) +
+  geom_text(aes(x=1.02,label = sprintf("%.3f (%.3f-%.3f)", 
+                                HR, Lower_CI, Upper_CI)),
+            hjust = -0.2, size = 3)
+dev.off()
+
+
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+
+plot_list <- list()
+
+for(ck in nclocks[3:7]) {
+  # 计算相关系数用于标题
+  cor_test <- cor.test(val.sam3$age, val.sam3[[ck]], method = "pearson")
+  cor_label <- sprintf("r = %.2f, p = %.3f", cor_test$estimate, cor_test$p.value)
+  
+  p <- ggplot(val.sam3, aes_string(x = "age", y = ck)) +
+    geom_point(color = "grey80", size = 0.5, alpha = 0.6) +
+    stat_cor(method = "pearson", size = 2.5, 
+             label.x.npc = 0.2, label.y.npc = 0.9) +
+    geom_smooth(method = "lm", se = TRUE, color = "darkblue", size = 0.5) +
+    xlab("Chronological age") +
+    ylab(ck) +
+    ggtitle(ck) +
+    theme_classic() +
+    theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+          axis.title = element_text(size = 9))
+  
+  plot_list[[ck]] <- p
+}
+
+wrap_plots(plot_list, ncol = 3) + 
+  plot_annotation(#title = "Correlation between Chronological Age and Epigenetic Clocks",
+                  theme = theme(plot.title = element_text(hjust = 0.5, face = "bold")))
+
+vars=c(c("id","age","sex","time","status"),nclocks)
+vars
+val.sam31=val.sam3[,vars]
+head(val.sam31)
+write.csv(val.sam31,"Resi/Info.cancer.samples.csv",row.names = F)

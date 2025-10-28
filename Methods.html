@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction of GOLD-R BioAge Methodology</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 2em;
+            max-width: 900px;
+            background-color: #f9f9f9;
+            color: #222;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 1.5em;
+        }
+        p, li {
+            margin-bottom: 1em;
+        }
+        .equation {
+            font-family: 'Cambria', 'Times New Roman', serif;
+            background-color: #eee;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+            overflow-x: auto;
+        }
+        .equation-number {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        a {
+            color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Construction of GOLD-R BioAge: Methodology</h1>
+
+    <p>The GOLD-R BioAge was constructed using a multi-step, residual-informed framework grounded in the Gompertz law of mortality. The process involved the following key steps:</p>
+
+    <h2>Step 1: Modeling Underlying Mortality Risk</h2>
+    <p>First, the underlying mortality risk (<code>h</code>) was modeled according to the Gompertz law as a function of chronological age (<code>CA</code>):</p>
+    <div class="equation">
+        h = Rate ∙ exp(Shape ∙ CA)
+    </div>
+
+    <h2>Step 2: Predicting Mortality Risk from Omics Data</h2>
+    <p>A LASSO regression model with 5-fold cross-validation was trained to predict the log-transformed mortality risk (<code>log h</code>) using omics data (e.g., proteomics, DNA methylation levels):</p>
+    <div class="equation">
+        log h = Coef ∙ CpGs + Intercept
+        <div class="equation-number">(1)</div>
+    </div>
+    <p>This predicted mortality risk was then used to define a primary BioAge by inverting the Gompertz equation:</p>
+    <div class="equation">
+        log h = log(Rate) + Shape ∙ BioAge
+        <div class="equation-number">(2)</div>
+    </div>
+
+    <h2>Step 3: Capturing the Residual Discrepancy</h2>
+    <p>The discrepancy between the methylome-predicted and demographically expected mortality risk was captured as a residual term:</p>
+    <div class="equation">
+        Residual = log h − Shape ∙ CA = Coef' ∙ Biomarkers + Intercept'
+        <div class="equation-number">(3)</div>
+    </div>
+    <p>A second LASSO model was developed to predict this residual directly from omics data.</p>
+
+    <h2>Step 4: Deriving GOLD-R BioAge with Predicted Residual</h2>
+    <p>The GOLD-R BioAge was then derived by incorporating the predicted residual (<code>PR</code>) back into the Gompertz framework:</p>
+    <div class="equation">
+        GOLD-R BioAge = CA + (1 / Shape) ∙ (PR − log(Rate))
+        <div class="equation-number">(4)</div>
+    </div>
+
+    <h2>Step 5: Scaling Transformation for Residual Underestimation</h2>
+    <p>To correct for the underestimation of biological age residuals resulting from the reduced variance of the predicted residuals compared to the original residual risks (<code>RR</code>), a scaling transformation was applied. The predicted residuals were standardized as follows:</p>
+    <div class="equation">
+        PR' = PR × [SD(RR) / SD(PR)]
+    </div>
+    <p>This scaled value was then centered to the mean of the original residuals:</p>
+    <div class="equation">
+        PR' = PR' − Mean(PR') + Mean(RR)
+    </div>
+    <p>The final GOLD-R BioAge was subsequently calculated using the transformed residual (<code>PR′</code>):</p>
+    <div class="equation">
+        GOLD-R BioAge = CA + (1 / Shape) ∙ (PR' − log(Rate))
+        <div class="equation-number">(5)</div>
+    </div>
+
+    <h2>Special Handling for NHANES and HRS Cohorts</h2>
+    <p>For the NHANES and HRS cohorts, where raw DNA methylation data was unavailable, the residual was derived indirectly from established epigenetic clocks:</p>
+    <ul>
+        <li>A composite DNAmAge was calculated from the first five principal components of seven epigenetic clocks regressed on chronological age.</li>
+        <li>The residual was computed using formula (3), where <code>log h = log(Rate) + Shape ∙ DNAmAge</code>.</li>
+        <li>This residual was then predicted using a panel of clinical biomarkers via a LASSO model.</li>
+        <li>The final biological age, termed <code>GOLD-R DNAmCli Age</code>, was derived using the above formulas (4) and (5).</li>
+    </ul>
+
+    <hr>
+    <p><small>Methodology converted to HTML for academic reference. Ensure to validate the mathematical notation in relevant scientific contexts.</small></p>
+
+</body>
+</html>

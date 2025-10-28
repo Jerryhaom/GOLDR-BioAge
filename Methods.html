@@ -4,118 +4,191 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Construction of GOLD-R BioAge Methodology</title>
+    <!-- MathJax配置 -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                tags: 'ams'
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            margin: 2em;
-            max-width: 900px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 15px;
             background-color: #f9f9f9;
             color: #222;
+            max-width: 100%;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         h1 {
             color: #2c3e50;
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.8em;
         }
         h2 {
             color: #34495e;
-            margin-top: 1.5em;
+            margin-top: 1.2em;
+            margin-bottom: 0.5em;
+            padding-left: 8px;
+            border-left: 3px solid #3498db;
+            font-size: 1.3em;
         }
         p, li {
-            margin-bottom: 1em;
+            margin-bottom: 0.8em;
+        }
+        .equation-container {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            overflow-x: auto;
         }
         .equation {
-            font-family: 'Cambria', 'Times New Roman', serif;
-            background-color: #eee;
-            padding: 10px 15px;
-            margin: 10px 0;
-            border-left: 4px solid #3498db;
-            overflow-x: auto;
+            text-align: center;
+            padding: 5px;
+            margin: 5px 0;
         }
         .equation-number {
             text-align: right;
             font-weight: bold;
-            margin-top: 5px;
+            margin-top: 3px;
+            color: #555;
+            font-size: 0.9em;
         }
         ul {
             padding-left: 20px;
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
         }
         code {
-            background-color: #f4f4f4;
+            font-family: 'Courier New', monospace;
+            background-color: #f1f1f1;
             padding: 2px 4px;
             border-radius: 3px;
+            font-size: 0.9em;
         }
-        a {
-            color: #2980b9;
+        .step-number {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 25px;
+            margin-right: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .note {
+            background-color: #e7f3ff;
+            border-left: 4px solid #3498db;
+            padding: 8px 12px;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            h2 {
+                font-size: 1.2em;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Construction of GOLD-R BioAge: Methodology</h1>
 
-    <h1>Construction of GOLD-R BioAge: Methodology</h1>
+        <p>The GOLD-R BioAge was constructed using a multi-step, residual-informed framework grounded in the Gompertz law of mortality. The process involved the following key steps:</p>
 
-    <p>The GOLD-R BioAge was constructed using a multi-step, residual-informed framework grounded in the Gompertz law of mortality. The process involved the following key steps:</p>
+        <h2><span class="step-number">1</span> Modeling Underlying Mortality Risk</h2>
+        <p>First, the underlying mortality risk (<code>h</code>) was modeled according to the Gompertz law as a function of chronological age (<code>CA</code>):</p>
+        <div class="equation-container">
+            <div class="equation">$$ h = \text{Rate} \cdot \exp(\text{Shape} \cdot \text{CA}) $$</div>
+        </div>
 
-    <h2>Step 1: Modeling Underlying Mortality Risk</h2>
-    <p>First, the underlying mortality risk (<code>h</code>) was modeled according to the Gompertz law as a function of chronological age (<code>CA</code>):</p>
-    <div class="equation">
-        h = Rate ∙ exp(Shape ∙ CA)
+        <h2><span class="step-number">2</span> Predicting Mortality Risk from Omics Data</h2>
+        <p>A LASSO regression model with 5-fold cross-validation was trained to predict the log-transformed mortality risk (<code>log h</code>) using omics data (e.g., proteomics, DNA methylation levels):</p>
+        <div class="equation-container">
+            <div class="equation">$$ \log h = \text{Coef} \cdot \text{Biomarkers} + \text{Intercept} $$</div>
+            <div class="equation-number">(1)</div>
+        </div>
+        <p>This predicted mortality risk was then used to define a primary BioAge by inverting the Gompertz equation:</p>
+        <div class="equation-container">
+            <div class="equation">$$ \log h = \log(\text{Rate}) + \text{Shape} \cdot \text{BioAge} $$</div>
+            <div class="equation-number">(2)</div>
+        </div>
+
+        <h2><span class="step-number">3</span> Capturing the Residual Discrepancy</h2>
+        <p>The discrepancy between the methylome-predicted and demographically expected mortality risk was captured as a residual term:</p>
+        <div class="equation-container">
+            <div class="equation">$$ \text{Residual} = \log h - \text{Shape} \cdot \text{CA} = \text{Coef}' \cdot \text{Biomarkers} + \text{Intercept}' $$</div>
+            <div class="equation-number">(3)</div>
+        </div>
+        <p>A second LASSO model was developed to predict this residual directly from omics data.</p>
+
+        <h2><span class="step-number">4</span> Deriving GOLD-R BioAge with Predicted Residual</h2>
+        <p>The GOLD-R BioAge was then derived by incorporating the predicted residual (<code>PR</code>) back into the Gompertz framework:</p>
+        <div class="equation-container">
+            <div class="equation">$$ \text{GOLD-R BioAge} = \text{CA} + \frac{1}{\text{Shape}} (\text{PR} - \log(\text{Rate})) $$</div>
+            <div class="equation-number">(4)</div>
+        </div>
+
+        <h2><span class="step-number">5</span> Scaling Transformation for Residual Underestimation</h2>
+        <p>To correct for the underestimation of biological age residuals resulting from the reduced variance of the predicted residuals compared to the original residual risks (<code>RR</code>), a scaling transformation was applied. The predicted residuals were standardized as follows:</p>
+        <div class="equation-container">
+            <div class="equation">$$ \text{PR}' = \text{PR} \times \left[ \frac{\text{SD}(\text{RR})}{\text{SD}(\text{PR})} \right] $$</div>
+        </div>
+        <p>This scaled value was then centered to the mean of the original residuals:</p>
+        <div class="equation-container">
+            <div class="equation">$$ \text{PR}' = \text{PR}' - \text{Mean}(\text{PR}') + \text{Mean}(\text{RR}) $$</div>
+        </div>
+        <p>The final GOLD-R BioAge was subsequently calculated using the transformed residual (<code>PR′</code>):</p>
+        <div class="equation-container">
+            <div class="equation">$$ \text{GOLD-R BioAge} = \text{CA} + \frac{1}{\text{Shape}} (\text{PR}' - \log(\text{Rate})) $$</div>
+            <div class="equation-number">(5)</div>
+        </div>
+
+        <h2>Special Handling for NHANES and HRS Cohorts</h2>
+        <p>For the NHANES and HRS cohorts, where raw DNA methylation data was unavailable, the residual was derived indirectly from established epigenetic clocks:</p>
+        <ul>
+            <li>A composite DNAmAge was calculated from the first five principal components of seven epigenetic clocks regressed on chronological age.</li>
+            <li>The residual was computed using formula (3), where <code>log h = log(Rate) + Shape ∙ DNAmAge</code>.</li>
+            <li>This residual was then predicted using a panel of clinical biomarkers via a LASSO model.</li>
+            <li>The final biological age, termed <code>GOLD-R DNAmCli Age</code>, was derived using the above formulas (4) and (5).</li>
+        </ul>
+
+        <div class="note">
+            <strong>Note:</strong> Methodology converted to HTML for academic reference. Ensure to validate the mathematical notation in relevant scientific contexts.
+        </div>
     </div>
-
-    <h2>Step 2: Predicting Mortality Risk from Omics Data</h2>
-    <p>A LASSO regression model with 5-fold cross-validation was trained to predict the log-transformed mortality risk (<code>log h</code>) using omics data (e.g., proteomics, DNA methylation levels):</p>
-    <div class="equation">
-        log h = Coef ∙ CpGs + Intercept
-        <div class="equation-number">(1)</div>
-    </div>
-    <p>This predicted mortality risk was then used to define a primary BioAge by inverting the Gompertz equation:</p>
-    <div class="equation">
-        log h = log(Rate) + Shape ∙ BioAge
-        <div class="equation-number">(2)</div>
-    </div>
-
-    <h2>Step 3: Capturing the Residual Discrepancy</h2>
-    <p>The discrepancy between the methylome-predicted and demographically expected mortality risk was captured as a residual term:</p>
-    <div class="equation">
-        Residual = log h − Shape ∙ CA = Coef' ∙ Biomarkers + Intercept'
-        <div class="equation-number">(3)</div>
-    </div>
-    <p>A second LASSO model was developed to predict this residual directly from omics data.</p>
-
-    <h2>Step 4: Deriving GOLD-R BioAge with Predicted Residual</h2>
-    <p>The GOLD-R BioAge was then derived by incorporating the predicted residual (<code>PR</code>) back into the Gompertz framework:</p>
-    <div class="equation">
-        GOLD-R BioAge = CA + (1 / Shape) ∙ (PR − log(Rate))
-        <div class="equation-number">(4)</div>
-    </div>
-
-    <h2>Step 5: Scaling Transformation for Residual Underestimation</h2>
-    <p>To correct for the underestimation of biological age residuals resulting from the reduced variance of the predicted residuals compared to the original residual risks (<code>RR</code>), a scaling transformation was applied. The predicted residuals were standardized as follows:</p>
-    <div class="equation">
-        PR' = PR × [SD(RR) / SD(PR)]
-    </div>
-    <p>This scaled value was then centered to the mean of the original residuals:</p>
-    <div class="equation">
-        PR' = PR' − Mean(PR') + Mean(RR)
-    </div>
-    <p>The final GOLD-R BioAge was subsequently calculated using the transformed residual (<code>PR′</code>):</p>
-    <div class="equation">
-        GOLD-R BioAge = CA + (1 / Shape) ∙ (PR' − log(Rate))
-        <div class="equation-number">(5)</div>
-    </div>
-
-    <h2>Special Handling for NHANES and HRS Cohorts</h2>
-    <p>For the NHANES and HRS cohorts, where raw DNA methylation data was unavailable, the residual was derived indirectly from established epigenetic clocks:</p>
-    <ul>
-        <li>A composite DNAmAge was calculated from the first five principal components of seven epigenetic clocks regressed on chronological age.</li>
-        <li>The residual was computed using formula (3), where <code>log h = log(Rate) + Shape ∙ DNAmAge</code>.</li>
-        <li>This residual was then predicted using a panel of clinical biomarkers via a LASSO model.</li>
-        <li>The final biological age, termed <code>GOLD-R DNAmCli Age</code>, was derived using the above formulas (4) and (5).</li>
-    </ul>
-
-    <hr>
-    <p><small>Methodology converted to HTML for academic reference. Ensure to validate the mathematical notation in relevant scientific contexts.</small></p>
-
 </body>
 </html>

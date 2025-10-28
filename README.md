@@ -53,3 +53,6 @@ GOLD-R demonstrates superior performance compared to established epigenetic cloc
 If you use GOLD-R in your research, please cite:
 1. Hao, M., Zhang, H., et al. (2025). Gompertz Law-Based Biological Age (GOLD BioAge): A Simple and Practical Measurement of Biological Ageing. *Advanced Science*.
 2. Zhang, H., Zhang, S., et al. (2025). A Residual Approach to Estimate Biological Age from Gompertz Modeling. *Under Review*.
+
+## Contact
+Meng Hao: haombio@gmail.com

@@ -14,6 +14,7 @@ Biological age (BA) quantifies an individual's aging status beyond chronological
 
 The GOLD-R framework employs a multi-step, residual-informed approach:
 https://jerryhaom.github.io/GOLDR-BioAge/Methods.html
+<img width="1098" height="735" alt="image" src="https://github.com/user-attachments/assets/3903baa8-ff47-4cdd-801a-0cadf565c8ba" />
 
 
 ## Applications
